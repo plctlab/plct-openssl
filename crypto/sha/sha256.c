@@ -157,6 +157,20 @@ static const SHA_LONG K256[64] = {
     0x90befffaUL, 0xa4506cebUL, 0xbef9a3f7UL, 0xc67178f2UL
 };
 
+#if defined(__riscv)
+# define MISA_K (1<<0)
+extern unsigned int OPENSSL_riscvcap_P;
+#  define RISCV_K_CAPABLE         (OPENSSL_riscvcap_P & MISA_K)
+
+static inline unsigned _sha256sig0 (unsigned rs1) {unsigned rd; __asm__ ("sha256sig0 %0, %1" : "=r"(rd) : "r"(rs1)); return rd;}
+static inline unsigned _sha256sig1 (unsigned rs1) {unsigned rd; __asm__ ("sha256sig1 %0, %1" : "=r"(rd) : "r"(rs1)); return rd;}
+static inline unsigned _sha256sum0 (unsigned rs1) {unsigned rd; __asm__ ("sha256sum0 %0, %1" : "=r"(rd) : "r"(rs1)); return rd;}
+static inline unsigned _sha256sum1 (unsigned rs1) {unsigned rd; __asm__ ("sha256sum1 %0, %1" : "=r"(rd) : "r"(rs1)); return rd;}
+# define Sigma0(x)       (RISCV_K_CAPABLE ? (_sha256sum0((x))) : (ROTATE((x),30) ^ ROTATE((x),19) ^ ROTATE((x),10)))
+# define Sigma1(x)       (RISCV_K_CAPABLE ? (_sha256sum1((x))) : (ROTATE((x),26) ^ ROTATE((x),21) ^ ROTATE((x),7)))
+# define sigma0(x)       (RISCV_K_CAPABLE ? (_sha256sig0((x))) : (ROTATE((x),25) ^ ROTATE((x),14) ^ ((x)>>3)))
+# define sigma1(x)       (RISCV_K_CAPABLE ? (_sha256sig1((x))) : (ROTATE((x),15) ^ ROTATE((x),13) ^ ((x)>>10)))
+#else
 /*
  * FIPS specification refers to right rotations, while our ROTATE macro
  * is left one. This is why you might notice that rotation coefficients
@@ -166,6 +180,7 @@ static const SHA_LONG K256[64] = {
 # define Sigma1(x)       (ROTATE((x),26) ^ ROTATE((x),21) ^ ROTATE((x),7))
 # define sigma0(x)       (ROTATE((x),25) ^ ROTATE((x),14) ^ ((x)>>3))
 # define sigma1(x)       (ROTATE((x),15) ^ ROTATE((x),13) ^ ((x)>>10))
+#endif
 
 # define Ch(x,y,z)       (((x) & (y)) ^ ((~(x)) & (z)))
 # define Maj(x,y,z)      (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))

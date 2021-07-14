@@ -39,8 +39,18 @@ void sm3_transform(SM3_CTX *c, const unsigned char *data);
 
 #include "crypto/md32_common.h"
 
+#if (defined(__riscv))
+# define MISA_K (1<<0)
+extern unsigned int OPENSSL_riscvcap_P;
+#  define RISCV_K_CAPABLE         (OPENSSL_riscvcap_P & MISA_K)
+static inline unsigned _sm3p0 (unsigned rs1) {unsigned rd; __asm__("sm3p0 %0, %1" : "=r"(rd) : "r"(rs1)); return rd;}
+static inline unsigned _sm3p1 (unsigned rs1) {unsigned rd; __asm__("sm3p1 %0, %1" : "=r"(rd) : "r"(rs1)); return rd;}
+#define P0(X) (RISCV_K_CAPABLE ? _sm3p0((X)) : (X ^ ROTATE(X, 9) ^ ROTATE(X, 17)))
+#define P1(X) (RISCV_K_CAPABLE ? _sm3p1((X)) : (X ^ ROTATE(X, 15) ^ ROTATE(X, 23)))
+#else
 #define P0(X) (X ^ ROTATE(X, 9) ^ ROTATE(X, 17))
 #define P1(X) (X ^ ROTATE(X, 15) ^ ROTATE(X, 23))
+#endif
 
 #define FF0(X,Y,Z) (X ^ Y ^ Z)
 #define GG0(X,Y,Z) (X ^ Y ^ Z)

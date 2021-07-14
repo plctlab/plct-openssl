@@ -50,6 +50,9 @@ IF[{- !$disabled{asm} && $config{processor} ne '386' -}]
   $CPUIDASM_ppc64=$CPUIDASM_ppc32
 
   $CPUIDASM_c64xplus=c64xpluscpuid.s
+  
+  $CPUIDASM_riscv32=riscvcap.c mem_clr.c
+  $CPUIDASM_riscv64=riscvcap.c mem_clr.c
 
   # Now that we have defined all the arch specific variables, use the
   # appropriate one, and define the appropriate macros

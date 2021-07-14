@@ -129,6 +129,111 @@ static ossl_inline uint32_t SM4_T(uint32_t X)
            rotl(SM4_SBOX_T[(uint8_t)X], 8);
 }
 
+#if (defined(__riscv))
+# define MISA_K (1<<0)
+extern unsigned int OPENSSL_riscvcap_P;
+#  define RISCV_K_CAPABLE         (OPENSSL_riscvcap_P & MISA_K)
+static inline unsigned _sm4ks (unsigned rs1, unsigned rs2, int bs) 
+{
+    unsigned rd;
+    __asm__("sm4ks %0, %1, %2, %3" : "=r"(rd) : "r"(rs1), "r"(rs2), "i"(bs));
+    return rd;
+}
+
+static inline uint32_t sm4_ks4(uint32_t rs1, uint32_t rs2) {
+    rs1 = _sm4ks(rs1, rs2, 0);
+    rs1 = _sm4ks(rs1, rs2, 1);
+    rs1 = _sm4ks(rs1, rs2, 2);
+    rs1 = _sm4ks(rs1, rs2, 3);
+    return rs1;
+}
+
+int SM4_set_key_without_k(const uint8_t *key, SM4_KEY *ks)
+{
+    /*
+     * Family Key
+     */
+    static const uint32_t FK[4] =
+        { 0xa3b1bac6, 0x56aa3350, 0x677d9197, 0xb27022dc };
+
+    /*
+     * Constant Key
+     */
+    static const uint32_t CK[32] = {
+        0x00070E15, 0x1C232A31, 0x383F464D, 0x545B6269,
+        0x70777E85, 0x8C939AA1, 0xA8AFB6BD, 0xC4CBD2D9,
+        0xE0E7EEF5, 0xFC030A11, 0x181F262D, 0x343B4249,
+        0x50575E65, 0x6C737A81, 0x888F969D, 0xA4ABB2B9,
+        0xC0C7CED5, 0xDCE3EAF1, 0xF8FF060D, 0x141B2229,
+        0x30373E45, 0x4C535A61, 0x686F767D, 0x848B9299,
+        0xA0A7AEB5, 0xBCC3CAD1, 0xD8DFE6ED, 0xF4FB0209,
+        0x10171E25, 0x2C333A41, 0x484F565D, 0x646B7279
+    };
+
+    uint32_t K[4];
+    int i;
+
+    K[0] = load_u32_be(key, 0) ^ FK[0];
+    K[1] = load_u32_be(key, 1) ^ FK[1];
+    K[2] = load_u32_be(key, 2) ^ FK[2];
+    K[3] = load_u32_be(key, 3) ^ FK[3];
+
+    for (i = 0; i != SM4_KEY_SCHEDULE; ++i) {
+        uint32_t X = K[(i + 1) % 4] ^ K[(i + 2) % 4] ^ K[(i + 3) % 4] ^ CK[i];
+        uint32_t t = 0;
+        t |= ((uint32_t)SM4_S[(uint8_t)(X >> 24)]) << 24;
+        t |= ((uint32_t)SM4_S[(uint8_t)(X >> 16)]) << 16;
+        t |= ((uint32_t)SM4_S[(uint8_t)(X >> 8)]) << 8;
+        t |= SM4_S[(uint8_t)X];
+
+        t = t ^ rotl(t, 13) ^ rotl(t, 23);
+        K[i % 4] ^= t;
+        ks->rk[i] = K[i % 4];
+    }
+    return 1;
+}
+
+int SM4_set_key(const uint8_t *key, SM4_KEY *ks)
+{
+    if (!RISCV_K_CAPABLE)
+        return SM4_set_key_without_k(key, ks);
+    /*
+     * Family Key
+     */
+    const uint32_t FK[4] =
+        { 0xC6BAB1A3, 0x5033AA56, 0x97917D67, 0xDC2270B2 };
+
+    /*
+     * Constant Key
+     */
+    const uint32_t CK [32] = {
+        0x150E0700, 0x312A231C, 0x4D463F38, 0x69625B54,
+        0x857E7770, 0xA19A938C, 0xBDB6AFA8, 0xD9D2CBC4,
+        0xF5EEE7E0, 0x110A03FC, 0x2D261F18, 0x49423B34,
+        0x655E5750, 0x817A736C, 0x9D968F88, 0xB9B2ABA4,
+        0xD5CEC7C0, 0xF1EAE3DC, 0x0D06FFF8, 0x29221B14,
+        0x453E3730, 0x615A534C, 0x7D766F68, 0x99928B84,
+        0xB5AEA7A0, 0xD1CAC3BC, 0xEDE6DFD8, 0x0902FBF4,
+        0x251E1710, 0x413A332C, 0x5D564F48, 0x79726B64
+    };
+
+    uint32_t* key_word = (uint32_t*) key;
+    uint32_t K[4];
+    int i;
+
+    K[0] = key_word[0] ^ FK[0];
+    K[1] = key_word[1] ^ FK[1];
+    K[2] = key_word[2] ^ FK[2];
+    K[3] = key_word[3] ^ FK[3];
+
+    for (i = 0; i != SM4_KEY_SCHEDULE; ++i) {
+        uint32_t X = K[(i + 1) % 4] ^ K[(i + 2) % 4] ^ K[(i + 3) % 4] ^ CK[i];
+        K[i % 4]= sm4_ks4(K[i % 4], X);
+        store_u32_be(K[i % 4], (uint8_t *)&ks->rk[i]);
+    }
+    return 1;
+}
+#else
 int SM4_set_key(const uint8_t *key, SM4_KEY *ks)
 {
     /*
@@ -162,7 +267,6 @@ int SM4_set_key(const uint8_t *key, SM4_KEY *ks)
     for (i = 0; i != SM4_KEY_SCHEDULE; ++i) {
         uint32_t X = K[(i + 1) % 4] ^ K[(i + 2) % 4] ^ K[(i + 3) % 4] ^ CK[i];
         uint32_t t = 0;
-
         t |= ((uint32_t)SM4_S[(uint8_t)(X >> 24)]) << 24;
         t |= ((uint32_t)SM4_S[(uint8_t)(X >> 16)]) << 16;
         t |= ((uint32_t)SM4_S[(uint8_t)(X >> 8)]) << 8;
@@ -172,9 +276,9 @@ int SM4_set_key(const uint8_t *key, SM4_KEY *ks)
         K[i % 4] ^= t;
         ks->rk[i] = K[i % 4];
     }
-
     return 1;
 }
+#endif
 
 #define SM4_RNDS(k0, k1, k2, k3, F)          \
       do {                                   \
@@ -183,6 +287,149 @@ int SM4_set_key(const uint8_t *key, SM4_KEY *ks)
          B2 ^= F(B0 ^ B1 ^ B3 ^ ks->rk[k2]); \
          B3 ^= F(B0 ^ B1 ^ B2 ^ ks->rk[k3]); \
       } while(0)
+
+#if (defined(__riscv))
+static inline unsigned _sm4ed (unsigned rs1, unsigned rs2, int bs) 
+{
+    unsigned rd;
+    __asm__("sm4ed %0, %1, %2, %3" : "=r"(rd) : "r"(rs1), "r"(rs2), "i"(bs)); 
+    return rd;
+}
+
+static ossl_inline uint32_t load_u32_le(const uint8_t *b, uint32_t n)
+{
+    return ((uint32_t)b[4 * n]) |
+           ((uint32_t)b[4 * n + 1] << 8) |
+           ((uint32_t)b[4 * n + 2] << 16) |
+           ((uint32_t)b[4 * n + 3] << 24);
+}
+
+static ossl_inline void store_u32_le(uint32_t v, uint8_t *b)
+{
+    b[3] = (uint8_t)(v >> 24);
+    b[2] = (uint8_t)(v >> 16);
+    b[1] = (uint8_t)(v >> 8);
+    b[0] = (uint8_t)(v);
+}
+
+static inline uint32_t sm4_ed4(uint32_t rs1, uint32_t rs2) {
+    rs1 = _sm4ed(rs1, rs2, 0);
+    rs1 = _sm4ed(rs1, rs2, 1);
+    rs1 = _sm4ed(rs1, rs2, 2);
+    rs1 = _sm4ed(rs1, rs2, 3);
+    return rs1;
+}
+
+#define RISCV_SM4_RNDS(k0, k1, k2, k3)          \
+      do {                                   \
+         B0 = sm4_ed4(B0, B1 ^ B2 ^ B3 ^ load_u32_be((uint8_t *)ks->rk, k0)); \
+         B1 = sm4_ed4(B1, B0 ^ B2 ^ B3 ^ load_u32_be((uint8_t *)ks->rk, k1)); \
+         B2 = sm4_ed4(B2, B0 ^ B1 ^ B3 ^ load_u32_be((uint8_t *)ks->rk, k2)); \
+         B3 = sm4_ed4(B3, B0 ^ B1 ^ B2 ^ load_u32_be((uint8_t *)ks->rk, k3)); \
+      } while(0)
+
+void SM4_encrypt_without_k(const uint8_t *in, uint8_t *out, const SM4_KEY *ks)
+{
+    uint32_t B0 = load_u32_be(in, 0);
+    uint32_t B1 = load_u32_be(in, 1);
+    uint32_t B2 = load_u32_be(in, 2);
+    uint32_t B3 = load_u32_be(in, 3);
+
+    /*
+     * Uses byte-wise sbox in the first and last rounds to provide some
+     * protection from cache based side channels.
+     */
+    SM4_RNDS( 0,  1,  2,  3, SM4_T_slow);
+    SM4_RNDS( 4,  5,  6,  7, SM4_T);
+    SM4_RNDS( 8,  9, 10, 11, SM4_T);
+    SM4_RNDS(12, 13, 14, 15, SM4_T);
+    SM4_RNDS(16, 17, 18, 19, SM4_T);
+    SM4_RNDS(20, 21, 22, 23, SM4_T);
+    SM4_RNDS(24, 25, 26, 27, SM4_T);
+    SM4_RNDS(28, 29, 30, 31, SM4_T_slow);
+
+    store_u32_be(B3, out);
+    store_u32_be(B2, out + 4);
+    store_u32_be(B1, out + 8);
+    store_u32_be(B0, out + 12);
+
+}
+
+void SM4_decrypt_without_k(const uint8_t *in, uint8_t *out, const SM4_KEY *ks)
+{
+    uint32_t B0 = load_u32_be(in, 0);
+    uint32_t B1 = load_u32_be(in, 1);
+    uint32_t B2 = load_u32_be(in, 2);
+    uint32_t B3 = load_u32_be(in, 3);
+
+    SM4_RNDS(31, 30, 29, 28, SM4_T_slow);
+    SM4_RNDS(27, 26, 25, 24, SM4_T);
+    SM4_RNDS(23, 22, 21, 20, SM4_T);
+    SM4_RNDS(19, 18, 17, 16, SM4_T);
+    SM4_RNDS(15, 14, 13, 12, SM4_T);
+    SM4_RNDS(11, 10,  9,  8, SM4_T);
+    SM4_RNDS( 7,  6,  5,  4, SM4_T);
+    SM4_RNDS( 3,  2,  1,  0, SM4_T_slow);
+
+    store_u32_be(B3, out);
+    store_u32_be(B2, out + 4);
+    store_u32_be(B1, out + 8);
+    store_u32_be(B0, out + 12);
+}
+
+void SM4_encrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks)
+{
+    if (!RISCV_K_CAPABLE) {
+        SM4_encrypt_without_k(in, out, ks);
+        return;
+    }
+    uint32_t B0 = load_u32_le(in, 0);
+    uint32_t B1 = load_u32_le(in, 1);
+    uint32_t B2 = load_u32_le(in, 2);
+    uint32_t B3 = load_u32_le(in, 3);
+
+    RISCV_SM4_RNDS( 0,  1,  2,  3);
+    RISCV_SM4_RNDS( 4,  5,  6,  7);
+    RISCV_SM4_RNDS( 8,  9, 10, 11);
+    RISCV_SM4_RNDS(12, 13, 14, 15);
+    RISCV_SM4_RNDS(16, 17, 18, 19);
+    RISCV_SM4_RNDS(20, 21, 22, 23);
+    RISCV_SM4_RNDS(24, 25, 26, 27);
+    RISCV_SM4_RNDS(28, 29, 30, 31);
+
+    store_u32_le(B3, out);
+    store_u32_le(B2, out + 4);
+    store_u32_le(B1, out + 8);
+    store_u32_le(B0, out + 12);
+}
+
+void SM4_decrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks)
+{
+    if (!RISCV_K_CAPABLE) {
+        SM4_encrypt_without_k(in, out, ks);
+        return;
+    }
+    uint32_t B0 = load_u32_le(in, 0);
+    uint32_t B1 = load_u32_le(in, 1);
+    uint32_t B2 = load_u32_le(in, 2);
+    uint32_t B3 = load_u32_le(in, 3);
+
+    RISCV_SM4_RNDS(31, 30, 29, 28);
+    RISCV_SM4_RNDS(27, 26, 25, 24);
+    RISCV_SM4_RNDS(23, 22, 21, 20);
+    RISCV_SM4_RNDS(19, 18, 17, 16);
+    RISCV_SM4_RNDS(15, 14, 13, 12);
+    RISCV_SM4_RNDS(11, 10,  9,  8);
+    RISCV_SM4_RNDS( 7,  6,  5,  4);
+    RISCV_SM4_RNDS( 3,  2,  1,  0);
+
+    store_u32_le(B3, out);
+    store_u32_le(B2, out + 4);
+    store_u32_le(B1, out + 8);
+    store_u32_le(B0, out + 12);
+}
+
+#else
 
 void SM4_encrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks)
 {
@@ -208,6 +455,7 @@ void SM4_encrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks)
     store_u32_be(B2, out + 4);
     store_u32_be(B1, out + 8);
     store_u32_be(B0, out + 12);
+
 }
 
 void SM4_decrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks)
@@ -231,3 +479,5 @@ void SM4_decrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks)
     store_u32_be(B1, out + 8);
     store_u32_be(B0, out + 12);
 }
+
+#endif

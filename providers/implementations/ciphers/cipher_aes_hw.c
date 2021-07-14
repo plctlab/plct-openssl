@@ -142,6 +142,8 @@ const PROV_CIPHER_HW *ossl_prov_cipher_hw_aes_##mode(size_t keybits)           \
 # include "cipher_aes_hw_t4.inc"
 #elif defined(S390X_aes_128_CAPABLE)
 # include "cipher_aes_hw_s390x.inc"
+#elif defined(RISCV_K_CAPABLE)
+# include "cipher_aes_hw_riscv_k.inc"
 #else
 /* The generic case */
 # define PROV_CIPHER_HW_declare(mode)

@@ -301,6 +301,30 @@ void aes256_t4_xts_decrypt(const unsigned char *in, unsigned char *out,
                            size_t blocks, const AES_KEY *key1,
                            const AES_KEY *key2, const unsigned char *ivec);
 
+# elif defined(AES_ASM) && defined(OPENSSL_CPUID_OBJ) && (defined(__riscv))
+#include "riscv_arch.h"
+extern unsigned int OPENSSL_riscvcap_P;
+#  define RISCV_K_CAPABLE         (OPENSSL_riscvcap_P & MISA_K)
+
+void aes_128_set_encrypt_key(unsigned int *ks, const unsigned char *key);
+void aes_128_set_decrypt_key(unsigned int *ks, const unsigned char *key);
+void aes_192_set_encrypt_key(unsigned int *ks, const unsigned char *key);
+void aes_192_set_decrypt_key(unsigned int *ks, const unsigned char *key);
+void aes_256_set_encrypt_key(unsigned int *ks, const unsigned char *key);
+void aes_256_set_decrypt_key(unsigned int *ks, const unsigned char *key);
+void aes_128_ecb_encrypt(const unsigned char *in, unsigned char *out,
+                    const AES_KEY *key);
+void aes_128_ecb_decrypt(const unsigned char *in, unsigned char *out,
+                    const AES_KEY *key);
+void aes_192_ecb_encrypt(const unsigned char *in, unsigned char *out,
+                    const AES_KEY *key);
+void aes_192_ecb_decrypt(const unsigned char *in, unsigned char *out,
+                    const AES_KEY *key);
+void aes_256_ecb_encrypt(const unsigned char *in, unsigned char *out,
+                    const AES_KEY *key);
+void aes_256_ecb_decrypt(const unsigned char *in, unsigned char *out,
+                    const AES_KEY *key);
+
 # elif defined(OPENSSL_CPUID_OBJ) && defined(__s390__)
 /* IBM S390X support */
 #  include "s390x_arch.h"
