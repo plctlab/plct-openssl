@@ -34,8 +34,8 @@ void OPENSSL_cpuid_setup(void)
     struct sigaction ill_act, oact_ill;
     sigset_t oset;
     static int trigger = 0;
-    int rd = 0;
     int rs1 = 0;
+    int rs2 = 0;
 
     if (trigger)
         return;
@@ -52,8 +52,24 @@ void OPENSSL_cpuid_setup(void)
     sigprocmask(SIG_SETMASK, &ill_act.sa_mask, &oset);
     sigaction(SIGILL, &ill_act, &oact_ill);
     if (sigsetjmp(ill_jmp, 1) == 0) {
-        __probe_k(rd, rs1);
-        OPENSSL_riscvcap_P = MISA_K;
+        riscv_zknd_probe(rs1, rs2);
+        OPENSSL_riscvcap_P = RISCV_K_ZKND;
+    }
+    if (sigsetjmp(ill_jmp, 1) == 0) {
+        riscv_zkne_probe(rs1, rs2);
+        OPENSSL_riscvcap_P = RISCV_K_ZKNE;
+    }
+    if (sigsetjmp(ill_jmp, 1) == 0) {
+        riscv_zknh_probe(rs1);
+        OPENSSL_riscvcap_P = RISCV_K_ZKNH;
+    }
+    if (sigsetjmp(ill_jmp, 1) == 0) {
+        riscv_zksed_probe(rs1, rs2);
+        OPENSSL_riscvcap_P = RISCV_K_ZKSED;
+    }
+    if (sigsetjmp(ill_jmp, 1) == 0) {
+        riscv_zksh_probe(rs1);
+        OPENSSL_riscvcap_P = RISCV_K_ZKSH;
     }
     sigaction(SIGILL, &oact_ill, NULL);
     sigprocmask(SIG_SETMASK, &oset, NULL);
