@@ -304,7 +304,9 @@ void aes256_t4_xts_decrypt(const unsigned char *in, unsigned char *out,
 # elif defined(AES_ASM) && defined(OPENSSL_CPUID_OBJ) && (defined(__riscv))
 #include "riscv_arch.h"
 extern unsigned int OPENSSL_riscvcap_P;
-#  define RISCV_K_CAPABLE         (OPENSSL_riscvcap_P & (RISCV_K_ZKND | RISCV_K_ZKNE))
+#define RISCV_AES_ENCRYPT_CAPABLE         (OPENSSL_riscvcap_P & RISCV_K_ZKNE)
+#define RISCV_AES_DECRYPT_CAPABLE         (OPENSSL_riscvcap_P & RISCV_K_ZKND)
+#define RISCV_AES_CAPABLE (OPENSSL_riscvcap_P & (RISCV_K_ZKND | RISCV_K_ZKNE))
 
 void aes_128_set_encrypt_key(unsigned int *ks, const unsigned char *key);
 void aes_128_set_decrypt_key(unsigned int *ks, const unsigned char *key);

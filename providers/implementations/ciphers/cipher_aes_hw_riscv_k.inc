@@ -37,47 +37,53 @@ static int cipher_hw_riscv_k_initkey(PROV_CIPHER_CTX *dat,
     dat->ks = ks;
 
     if (!dat->enc) {
-        switch (keylen) {
-        case 16:
-            aes_128_set_decrypt_key(ks->rd_key, key);
-            ks->rounds = 10;
-            dat->block = (block128_f)aes_128_ecb_decrypt;
-            break;
-        case 24:
-            aes_192_set_decrypt_key(ks->rd_key, key);
-            ks->rounds = 12;
-            dat->block = (block128_f)aes_192_ecb_decrypt;
-            break;
-        case 32:
-            aes_256_set_decrypt_key(ks->rd_key, key);
-            ks->rounds = 14;
-            dat->block = (block128_f)aes_256_ecb_decrypt;
-            break;
-        default:
-            return 0;
-        }
-        dat->stream.cbc = NULL;
+        if (RISCV_AES_DECRYPT_CAPABLE) {
+            switch (keylen) {
+            case 16:
+                aes_128_set_decrypt_key(ks->rd_key, key);
+                ks->rounds = 10;
+                dat->block = (block128_f)aes_128_ecb_decrypt;
+                break;
+            case 24:
+                aes_192_set_decrypt_key(ks->rd_key, key);
+                ks->rounds = 12;
+                dat->block = (block128_f)aes_192_ecb_decrypt;
+                break;
+            case 32:
+                aes_256_set_decrypt_key(ks->rd_key, key);
+                ks->rounds = 14;
+                dat->block = (block128_f)aes_256_ecb_decrypt;
+                break;
+            default:
+                return 0;
+            }
+            dat->stream.cbc = NULL;
+        } else 
+            return cipher_hw_aes_initkey(dat, key, keylen);
     } else {
-        switch (keylen) {
-        case 16:
-            aes_128_set_encrypt_key(ks->rd_key, key);
-            ks->rounds = 10;
-            dat->block = (block128_f)aes_128_ecb_encrypt;
-            break;
-        case 24:
-            aes_192_set_encrypt_key(ks->rd_key, key);
-            ks->rounds = 12;
-            dat->block = (block128_f)aes_192_ecb_encrypt;
-            break;
-        case 32:
-            aes_256_set_encrypt_key(ks->rd_key, key);
-            ks->rounds = 14;
-            dat->block = (block128_f)aes_256_ecb_encrypt;
-            break;
-        default:
-            return 0;
-        }
-        dat->stream.cbc = NULL;
+        if (RISCV_AES_ENCRYPT_CAPABLE) {
+            switch (keylen) {
+            case 16:
+                aes_128_set_encrypt_key(ks->rd_key, key);
+                ks->rounds = 10;
+                dat->block = (block128_f)aes_128_ecb_encrypt;
+                break;
+            case 24:
+                aes_192_set_encrypt_key(ks->rd_key, key);
+                ks->rounds = 12;
+                dat->block = (block128_f)aes_192_ecb_encrypt;
+                break;
+            case 32:
+                aes_256_set_encrypt_key(ks->rd_key, key);
+                ks->rounds = 14;
+                dat->block = (block128_f)aes_256_ecb_encrypt;
+                break;
+            default:
+                return 0;
+            }
+            dat->stream.cbc = NULL;
+        } else 
+            return cipher_hw_aes_initkey(dat, key, keylen);
     }
 
     return 1;
@@ -90,5 +96,5 @@ static const PROV_CIPHER_HW riscv_k_##mode = {                                  
     cipher_hw_aes_copyctx                                                      \
 };
 #define PROV_CIPHER_HW_select(mode)                                            \
-if (RISCV_K_CAPABLE)                                                             \
+if (RISCV_AES_CAPABLE)                                                             \
     return &riscv_k_##mode;
