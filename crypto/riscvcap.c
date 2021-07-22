@@ -22,37 +22,6 @@ __attribute__ ((visibility("hidden")))
 #endif
 unsigned int OPENSSL_riscvcap_P = 0;
 
-int CRYPTO_memcmp(const void * in_a, const void * in_b, size_t len)
-{
-    size_t i;
-    const volatile unsigned char *a = in_a;
-    const volatile unsigned char *b = in_b;
-    unsigned char x = 0;
-
-    for (i = 0; i < len; i++)
-        x |= a[i] ^ b[i];
-
-    return x;
-}
-
-/*
- * For systems that don't provide an instruction counter register or equivalent.
- */
-uint32_t OPENSSL_rdtsc(void)
-{
-    return 0;
-}
-
-size_t OPENSSL_instrument_bus(unsigned int *out, size_t cnt)
-{
-    return 0;
-}
-
-size_t OPENSSL_instrument_bus2(unsigned int *out, size_t cnt, size_t max)
-{
-    return 0;
-}
-
 static sigjmp_buf ill_jmp;
 static void ill_handler(int sig)
 {

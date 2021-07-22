@@ -8,7 +8,7 @@
 
 
 
-# AES for riscv32.
+# AES for riscv64.
 
 # April 2021.
 #

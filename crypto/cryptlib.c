@@ -430,7 +430,7 @@ void OPENSSL_die(const char *message, const char *file, int line)
 #endif
 }
 
-#if !defined(OPENSSL_CPUID_OBJ)
+#if !defined(OPENSSL_CPUID_OBJ) || defined(__riscv)
 /*
  * The volatile is used to ensure that the compiler generates code that reads
  * all values from the array and doesn't try to optimize this away. The standard
