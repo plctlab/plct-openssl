@@ -124,9 +124,9 @@ static inline long _rv_sm3p1 (long rs1)
 //	=== SM4:	Zks (RV32, RV64), Zksed
 
 static inline long _rv_sm4ks (long rs1, long rs2, uint8_t bs)
-	{__asm__("sm4ks	%0, %1, %2" : "+r"(rs1) : "r"(rs2), "i"(bs)); return rs1;}
+	{__asm__("sm4ks	%0, %0, %1, %2" : "+r"(rs1) : "r"(rs2), "i"(bs)); return rs1;}
 static inline long _rv_sm4ed (long rs1, long rs2, uint8_t bs)
-	{__asm__("sm4ed	%0, %1, %2" : "+r"(rs1) : "r"(rs2), "i"(bs)); return rs1;}
+	{__asm__("sm4ed	%0, %0, %1, %2" : "+r"(rs1) : "r"(rs2), "i"(bs)); return rs1;}
 
 //	===	Entropy source: Zkr (RV32, RV64)
 

@@ -21,7 +21,6 @@
 #if (__riscv_xlen == 32)
 #define riscv_zknd_probe(rs1, rs2) _rv32_aes32dsi(rs1, rs2, 0)
 #define riscv_zkne_probe(rs1, rs2) _rv32_aes32esi(rs1, rs2, 0)
-
 #else  // __riscv_xlen == 64
 #define riscv_zknd_probe(rs1, rs2) _rv64_aes64dsm(rs1, rs2)
 #define riscv_zkne_probe(rs1, rs2) _rv64_aes64esm(rs1, rs2)
@@ -29,4 +28,4 @@
 #define riscv_zknh_probe(rs1)  _rv_sha256sig0(rs1)
 #define riscv_zksed_probe(rs1, rs2)  _rv_sm4ks(rs1, rs2, 0)
 #define riscv_zksh_probe(rs1)  _rv_sm3p0(rs1)
-#endif                          /* OSSL_CRYPTO_SPARC_ARCH_H */
+#endif                          /* OSSL_CRYPTO_RISCV_ARCH_H */

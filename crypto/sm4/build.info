@@ -1,4 +1,13 @@
 LIBS=../../libcrypto
-SOURCE[../../libcrypto]=\
-        sm4.c
+$SM4ASM=sm4.c
+IF[{- !$disabled{asm} -}]
+  $SM4ASM_riscv32=riscv_sm4.c
+  $SM4ASM_riscv64=riscv_sm4.c
+  IF[$SM4ASM_{- $target{asm_arch} -}]
+    $SM4ASM=$SM4ASM_{- $target{asm_arch} -} sm4.c
+  ENDIF
+ENDIF
 
+INCLUDE[riscv_sm4.o]=..
+SOURCE[../../libcrypto]=\
+        $SM4ASM 
