@@ -166,3 +166,6 @@ GENERATE[keccak1600-avx512vl.S]=asm/keccak1600-avx512vl.pl
 GENERATE[keccak1600-mmx.S]=asm/keccak1600-mmx.pl
 GENERATE[keccak1600p8-ppc.S]=asm/keccak1600p8-ppc.pl
 GENERATE[sha1-thumb.S]=asm/sha1-thumb.pl
+
+INCLUDE[sha512.o]=..
+INCLUDE[sha256.o]=..

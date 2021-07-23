@@ -501,40 +501,21 @@ static SHA_LONG64 __fastcall __pull64be(const void *x)
 #  define ROTR(x,s)       (((x)>>s) | (x)<<(64-s))
 # endif
 
-#if defined(__riscv)
-# define MISA_K (1<<0)
-extern unsigned int OPENSSL_riscvcap_P;
-#  define RISCV_K_CAPABLE         (OPENSSL_riscvcap_P & MISA_K)
-#if (__riscv_xlen == 32)
-static inline uint32_t _sha512sig0l(uint32_t rs1, uint32_t rs2) {uint32_t rd; __asm__ ("sha512sig0l %0, %1, %2" : "=r"(rd) : "r"(rs1), "r"(rs2)); return rd;}
-static inline uint32_t _sha512sig0h(uint32_t rs1, uint32_t rs2) {uint32_t rd; __asm__ ("sha512sig0h %0, %1, %2" : "=r"(rd) : "r"(rs1), "r"(rs2)); return rd;}
-static inline uint32_t _sha512sig1l(uint32_t rs1, uint32_t rs2) {uint32_t rd; __asm__ ("sha512sig1l %0, %1, %2" : "=r"(rd) : "r"(rs1), "r"(rs2)); return rd;}
-static inline uint32_t _sha512sig1h(uint32_t rs1, uint32_t rs2) {uint32_t rd; __asm__ ("sha512sig1h %0, %1, %2" : "=r"(rd) : "r"(rs1), "r"(rs2)); return rd;}
-static inline uint32_t _sha512sum0r(uint32_t rs1, uint32_t rs2) {uint32_t rd; __asm__ ("sha512sum0r %0, %1, %2" : "=r"(rd) : "r"(rs1), "r"(rs2)); return rd;}
-static inline uint32_t _sha512sum1r(uint32_t rs1, uint32_t rs2) {uint32_t rd; __asm__ ("sha512sum1r %0, %1, %2" : "=r"(rd) : "r"(rs1), "r"(rs2)); return rd;}
-# define Sigma0(x)       (RISCV_K_CAPABLE ? (((uint64_t)_sha512sum0r((uint32_t)(x>>32),(uint32_t)x))<<32 | ((uint64_t)_sha512sum0r((uint32_t)x,(uint32_t)(x>>32)))) :\
-                                            (ROTR((x),28) ^ ROTR((x),34) ^ ROTR((x),39)))
-# define Sigma1(x)       (RISCV_K_CAPABLE ? (((uint64_t)_sha512sum1r((uint32_t)(x>>32),(uint32_t)x))<<32 | ((uint64_t)_sha512sum1r((uint32_t)x,(uint32_t)(x>>32)))) :\
-                                            (ROTR((x),14) ^ ROTR((x),18) ^ ROTR((x),41)))
-# define sigma0(x)       (RISCV_K_CAPABLE ? (((uint64_t)_sha512sig0h((uint32_t)(x>>32),(uint32_t)x))<<32 | ((uint64_t)_sha512sig0l((uint32_t)x,(uint32_t)(x>>32)))) :\
-                                            (ROTR((x),1)  ^ ROTR((x),8)  ^ ((x)>>7)))
-# define sigma1(x)       (RISCV_K_CAPABLE ? (((uint64_t)_sha512sig1h((uint32_t)(x>>32),(uint32_t)x))<<32 | ((uint64_t)_sha512sig1l((uint32_t)x,(uint32_t)(x>>32)))) :\
-                                            (ROTR((x),19) ^ ROTR((x),61) ^ ((x)>>6)))
-#elif (__riscv_xlen == 64)
-static inline uint64_t _sha512sig0 (uint64_t rs1) {uint64_t rd; __asm__ ("sha512sig0  %0, %1" : "=r"(rd) : "r"(rs1)); return rd;}
-static inline uint64_t _sha512sig1 (uint64_t rs1) {uint64_t rd; __asm__ ("sha512sig1  %0, %1" : "=r"(rd) : "r"(rs1)); return rd;}
-static inline uint64_t _sha512sum0 (uint64_t rs1) {uint64_t rd; __asm__ ("sha512sum0  %0, %1" : "=r"(rd) : "r"(rs1)); return rd;}
-static inline uint64_t _sha512sum1 (uint64_t rs1) {uint64_t rd; __asm__ ("sha512sum1  %0, %1" : "=r"(rd) : "r"(rs1)); return rd;}
-# define Sigma0(x)       (RISCV_K_CAPABLE ? (_sha512sum0((x))) : (ROTR((x),28) ^ ROTR((x),34) ^ ROTR((x),39)))
-# define Sigma1(x)       (RISCV_K_CAPABLE ? (_sha512sum1((x))) : (ROTR((x),14) ^ ROTR((x),18) ^ ROTR((x),41)))
-# define sigma0(x)       (RISCV_K_CAPABLE ? (_sha512sig0((x))) : (ROTR((x),1)  ^ ROTR((x),8)  ^ ((x)>>7)))
-# define sigma1(x)       (RISCV_K_CAPABLE ? (_sha512sig1((x))) : (ROTR((x),19) ^ ROTR((x),61) ^ ((x)>>6)))
-#endif
+#include "crypto/sha_platform.h"
+# define _Sigma0(x)       (ROTR((x),28) ^ ROTR((x),34) ^ ROTR((x),39))
+# define _Sigma1(x)       (ROTR((x),14) ^ ROTR((x),18) ^ ROTR((x),41))
+# define _sigma0(x)       (ROTR((x),1)  ^ ROTR((x),8)  ^ ((x)>>7))
+# define _sigma1(x)       (ROTR((x),19) ^ ROTR((x),61) ^ ((x)>>6))
+#ifdef ARCH_SHA512_CAPABLE
+#define Sigma0(x) (ARCH_SHA512_CAPABLE? ARCH_SHA512_Sigma0(x) : _Sigma0(x))
+#define Sigma1(x) (ARCH_SHA512_CAPABLE? ARCH_SHA512_Sigma1(x) : _Sigma1(x))
+#define sigma0(x) (ARCH_SHA512_CAPABLE? ARCH_SHA512_sigma0(x) : _sigma0(x))
+#define sigma1(x) (ARCH_SHA512_CAPABLE? ARCH_SHA512_sigma1(x) : _sigma1(x))
 #else
-# define Sigma0(x)       (ROTR((x),28) ^ ROTR((x),34) ^ ROTR((x),39))
-# define Sigma1(x)       (ROTR((x),14) ^ ROTR((x),18) ^ ROTR((x),41))
-# define sigma0(x)       (ROTR((x),1)  ^ ROTR((x),8)  ^ ((x)>>7))
-# define sigma1(x)       (ROTR((x),19) ^ ROTR((x),61) ^ ((x)>>6))
+#define Sigma0(x)  _Sigma0(x)
+#define Sigma1(x)  _Sigma1(x)
+#define sigma0(x)  _sigma0(x)
+#define sigma1(x)  _sigma1(x)
 #endif
 # define Ch(x,y,z)       (((x) & (y)) ^ ((~(x)) & (z)))
 # define Maj(x,y,z)      (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))
