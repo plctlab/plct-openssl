@@ -20,7 +20,7 @@ static inline uint32_t sm4_ks4(uint32_t rs1, uint32_t rs2) {
     return rs1;
 }
 
-int arch_SM4_set_key(const uint8_t *key, SM4_KEY *ks)
+int riscv_SM4_set_key(const uint8_t *key, SM4_KEY *ks)
 {
     /*
      * Family Key
@@ -84,7 +84,7 @@ static inline uint32_t sm4_ed4(uint32_t rs1, uint32_t rs2) {
       } while(0)
 
 
-void arch_SM4_encrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks)
+void riscv_SM4_encrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks)
 {
     uint32_t B0 = get32u_le(in);
     uint32_t B1 = get32u_le(in + 4);
@@ -106,7 +106,7 @@ void arch_SM4_encrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks)
     put32u_le(out + 12, B0);
 }
 
-void arch_SM4_decrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks)
+void riscv_SM4_decrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks)
 {
     uint32_t B0 = get32u_le(in);
     uint32_t B1 = get32u_le(in + 4);
@@ -126,4 +126,25 @@ void arch_SM4_decrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks)
     put32u_le(out + 4, B2);
     put32u_le(out + 8, B1);
     put32u_le(out + 12, B0);
+}
+
+int arch_SM4_set_key(const uint8_t *key, SM4_KEY *ks){
+    if (RISCV_SM4_CAPABLE)
+        return riscv_SM4_set_key(key, ks);
+    else
+        return SM4_set_key(key, ks);
+}
+
+void arch_SM4_encrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks) {
+    if (RISCV_SM4_CAPABLE)
+        return riscv_SM4_encrypt(in, out, ks);
+    else
+        return SM4_encrypt(in, out, ks);
+}
+
+void arch_SM4_decrypt(const uint8_t *in, uint8_t *out, const SM4_KEY *ks) {
+    if (RISCV_SM4_CAPABLE)
+        return riscv_SM4_decrypt(in, out, ks);
+    else
+        return SM4_decrypt(in, out, ks);
 }

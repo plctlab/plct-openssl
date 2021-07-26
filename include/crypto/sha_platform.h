@@ -11,26 +11,46 @@
 #ifndef OSSL_CRYPTO_SHA_PLATFORM_H
 # define OSSL_CRYPTO_SHA_PLATFORM_H
 #include "crypto/sha.h"
-#if defined(__riscv)
+#if defined(OPENSSL_CPUID_OBJ)&& defined(__riscv)
 #include "riscv_arch.h"
 extern unsigned int OPENSSL_riscvcap_P;
 # define RISCV_SHA_CAPABLE         (OPENSSL_riscvcap_P & RISCV_K_ZKSH)
-# define ARCH_SHA256_Sigma0(x)  _rv_sha256sum0((x))
-# define ARCH_SHA256_Sigma1(x)  _rv_sha256sum1((x))
-# define ARCH_SHA256_sigma0(x)  _rv_sha256sig0((x))
-# define ARCH_SHA256_sigma1(x)  _rv_sha256sig1((x))
-# define ARCH_SHA256_CAPABLE RISCV_SHA_CAPABLE
+inline long arch_sha256_Sigma0(long x) { if(RISCV_SHA_CAPABLE) return _rv_sha256sum0(x); else return _Sigma0(x); }
+inline long arch_sha256_Sigma1(long x) { if(RISCV_SHA_CAPABLE) return _rv_sha256sum1((x)); else return _Sigma1(x); }
+inline long arch_sha256_sigma0(long x) { if(RISCV_SHA_CAPABLE) return _rv_sha256sig0((x)); else return _sigma0(x); }
+inline long arch_sha256_sigma1(long x) { if(RISCV_SHA_CAPABLE) return _rv_sha256sig1((x)); else return _sigma1(x); }
+# define arch_sha256_CAPABLE RISCV_SHA_CAPABLE
 #if (__riscv_xlen == 32)
-# define ARCH_SHA512_Sigma0(x) (((uint64_t)_rv32_sha512sum0r((uint32_t)(x >> 32),(uint32_t)x)) << 32 | ((uint64_t)_rv32_sha512sum0r((uint32_t)x,(uint32_t)(x >> 32))))
-# define ARCH_SHA512_Sigma1(x) (((uint64_t)_rv32_sha512sum1r((uint32_t)(x >> 32),(uint32_t)x)) << 32 | ((uint64_t)_rv32_sha512sum1r((uint32_t)x,(uint32_t)(x >> 32))))
-# define ARCH_SHA512_sigma0(x) (((uint64_t)_rv32_sha512sig0h((uint32_t)(x >> 32),(uint32_t)x)) << 32 | ((uint64_t)_rv32_sha512sig0l((uint32_t)x,(uint32_t)(x >> 32))))
-# define ARCH_SHA512_sigma1(x) (((uint64_t)_rv32_sha512sig1h((uint32_t)(x >> 32),(uint32_t)x)) << 32 | ((uint64_t)_rv32_sha512sig1l((uint32_t)x,(uint32_t)(x >> 32))))
+inline uint64_t arch_sha512_Sigma0(uint64_t x) {
+    if(RISCV_SHA_CAPABLE)
+        return (((uint64_t)_rv32_sha512sum0r((uint32_t)(x >> 32),(uint32_t)x)) << 32 | ((uint64_t)_rv32_sha512sum0r((uint32_t)x,(uint32_t)(x >> 32))))
+    else
+        return _Sigma0(x);
+}
+inline uint64_t arch_sha512_Sigma1(uint64_t x) {
+    if(RISCV_SHA_CAPABLE)
+        return (((uint64_t)_rv32_sha512sum1r((uint32_t)(x >> 32),(uint32_t)x)) << 32 | ((uint64_t)_rv32_sha512sum1r((uint32_t)x,(uint32_t)(x >> 32))));
+    else
+        return _Sigma1(x);
+}
+inline uint64_t arch_sha512_sigma0(uint64_t x) {
+    if(RISCV_SHA_CAPABLE)
+        return (((uint64_t)_rv32_sha512sig0h((uint32_t)(x >> 32),(uint32_t)x)) << 32 | ((uint64_t)_rv32_sha512sig0l((uint32_t)x,(uint32_t)(x >> 32))));
+    else
+        return _sigma0(x);
+}
+inline uint64_t arch_sha512_sigma1(uint64_t x) {
+    if(RISCV_SHA_CAPABLE)
+        return (((uint64_t)_rv32_sha512sig1h((uint32_t)(x >> 32),(uint32_t)x)) << 32 | ((uint64_t)_rv32_sha512sig1l((uint32_t)x,(uint32_t)(x >> 32))));
+    else
+        return _sigma1(x);
+}
 #elif (__riscv_xlen == 64)
-# define ARCH_SHA512_Sigma0(x)     _rv64_sha512sum0((x))
-# define ARCH_SHA512_Sigma1(x)     _rv64_sha512sum1((x))
-# define ARCH_SHA512_sigma0(x)     _rv64_sha512sig0((x))
-# define ARCH_SHA512_sigma1(x)     _rv64_sha512sig1((x))
+inline uint64_t arch_sha512_Sigma0(uint64_t x) { if(RISCV_SHA_CAPABLE) return _rv64_sha512sum0((x)); else return _Sigma0(x); }
+inline uint64_t arch_sha512_Sigma1(uint64_t x) { if(RISCV_SHA_CAPABLE) return _rv64_sha512sum1((x)); else return _Sigma1(x); }
+inline uint64_t arch_sha512_sigma0(uint64_t x) { if(RISCV_SHA_CAPABLE) return _rv64_sha512sig0((x)); else return _sigma0(x); }
+inline uint64_t arch_sha512_sigma1(uint64_t x) { if(RISCV_SHA_CAPABLE) return _rv64_sha512sig1((x)); else return _sigma1(x); }
 #endif
-# define ARCH_SHA512_CAPABLE RISCV_SHA_CAPABLE
+# define arch_sha512_CAPABLE RISCV_SHA_CAPABLE
 #endif
 #endif

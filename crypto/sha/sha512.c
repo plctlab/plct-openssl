@@ -501,16 +501,16 @@ static SHA_LONG64 __fastcall __pull64be(const void *x)
 #  define ROTR(x,s)       (((x)>>s) | (x)<<(64-s))
 # endif
 
-#include "crypto/sha_platform.h"
 # define _Sigma0(x)       (ROTR((x),28) ^ ROTR((x),34) ^ ROTR((x),39))
 # define _Sigma1(x)       (ROTR((x),14) ^ ROTR((x),18) ^ ROTR((x),41))
 # define _sigma0(x)       (ROTR((x),1)  ^ ROTR((x),8)  ^ ((x)>>7))
 # define _sigma1(x)       (ROTR((x),19) ^ ROTR((x),61) ^ ((x)>>6))
-#ifdef ARCH_SHA512_CAPABLE
-#define Sigma0(x) (ARCH_SHA512_CAPABLE? ARCH_SHA512_Sigma0(x) : _Sigma0(x))
-#define Sigma1(x) (ARCH_SHA512_CAPABLE? ARCH_SHA512_Sigma1(x) : _Sigma1(x))
-#define sigma0(x) (ARCH_SHA512_CAPABLE? ARCH_SHA512_sigma0(x) : _sigma0(x))
-#define sigma1(x) (ARCH_SHA512_CAPABLE? ARCH_SHA512_sigma1(x) : _sigma1(x))
+#include "crypto/sha_platform.h"
+#ifdef arch_sha512_CAPABLE
+#define Sigma0(x) arch_sha512_Sigma0(x)
+#define Sigma1(x) arch_sha512_Sigma1(x)
+#define sigma0(x) arch_sha512_sigma0(x)
+#define sigma1(x) arch_sha512_sigma1(x)
 #else
 #define Sigma0(x)  _Sigma0(x)
 #define Sigma1(x)  _Sigma1(x)

@@ -162,16 +162,16 @@ static const SHA_LONG K256[64] = {
  * is left one. This is why you might notice that rotation coefficients
  * differ from those observed in FIPS document by 32-N...
  */
-#include "crypto/sha_platform.h"
 # define _Sigma0(x)       (ROTATE((x),30) ^ ROTATE((x),19) ^ ROTATE((x),10))
 # define _Sigma1(x)       (ROTATE((x),26) ^ ROTATE((x),21) ^ ROTATE((x),7))
 # define _sigma0(x)       (ROTATE((x),25) ^ ROTATE((x),14) ^ ((x)>>3))
 # define _sigma1(x)       (ROTATE((x),15) ^ ROTATE((x),13) ^ ((x)>>10))
-#ifdef ARCH_SHA256_CAPABLE
-#define Sigma0(x) (ARCH_SHA256_CAPABLE? ARCH_SHA256_Sigma0(x) : _Sigma0(x))
-#define Sigma1(x) (ARCH_SHA256_CAPABLE? ARCH_SHA256_Sigma1(x) : _Sigma1(x))
-#define sigma0(x) (ARCH_SHA256_CAPABLE? ARCH_SHA256_sigma0(x) : _sigma0(x))
-#define sigma1(x) (ARCH_SHA256_CAPABLE? ARCH_SHA256_sigma1(x) : _sigma1(x))
+#include "crypto/sha_platform.h"
+#ifdef arch_sha256_CAPABLE
+#define Sigma0(x) arch_sha256_Sigma0(x)
+#define Sigma1(x) arch_sha256_Sigma1(x)
+#define sigma0(x) arch_sha256_sigma0(x)
+#define sigma1(x) arch_sha256_sigma1(x)
 #else
 #define Sigma0(x)  _Sigma0(x)
 #define Sigma1(x)  _Sigma1(x)

@@ -43,8 +43,8 @@ void sm3_transform(SM3_CTX *c, const unsigned char *data);
 #define _P1(X) (X ^ ROTATE(X, 15) ^ ROTATE(X, 23))
 #include "crypto/sm3_platform.h"
 #ifdef ARCH_SM3_CAPABLE
-#define P0(X) (ARCH_SM3_CAPABLE ? ARCH_P0(X) : _P0(X))
-#define P1(X) (ARCH_SM3_CAPABLE ? ARCH_P1(X) : _P1(X))
+#define P0 ARCH_P0
+#define P1 ARCH_P1
 #else
 #define P0 _P0
 #define P1 _P1
