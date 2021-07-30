@@ -132,23 +132,35 @@ void OPENSSL_cpuid_setup(void)
     sigaction(SIGILL, &ill_act, &oact_ill);
     if (sigsetjmp(ill_jmp, 1) == 0) {
         riscv_zknd_probe(rs1, rs2);
-        OPENSSL_riscvcap_P = RISCV_K_ZKND;
+        OPENSSL_riscvcap_P |= RISCV_K_ZKND;
     }
     if (sigsetjmp(ill_jmp, 1) == 0) {
         riscv_zkne_probe(rs1, rs2);
-        OPENSSL_riscvcap_P = RISCV_K_ZKNE;
+        OPENSSL_riscvcap_P |= RISCV_K_ZKNE;
     }
     if (sigsetjmp(ill_jmp, 1) == 0) {
         riscv_zknh_probe(rs1);
-        OPENSSL_riscvcap_P = RISCV_K_ZKNH;
+        OPENSSL_riscvcap_P |= RISCV_K_ZKNH;
     }
     if (sigsetjmp(ill_jmp, 1) == 0) {
         riscv_zksed_probe(rs1, rs2);
-        OPENSSL_riscvcap_P = RISCV_K_ZKSED;
+        OPENSSL_riscvcap_P |= RISCV_K_ZKSED;
     }
     if (sigsetjmp(ill_jmp, 1) == 0) {
         riscv_zksh_probe(rs1);
-        OPENSSL_riscvcap_P = RISCV_K_ZKSH;
+        OPENSSL_riscvcap_P |= RISCV_K_ZKSH;
+    }
+	if (sigsetjmp(ill_jmp, 1) == 0) {
+        riscv_zbkb_probe(rs1);
+        OPENSSL_riscvcap_P |= RISCV_K_ZBKB;
+    }
+	if (sigsetjmp(ill_jmp, 1) == 0) {
+        riscv_zbkc_probe(rs1, rs2);
+        OPENSSL_riscvcap_P |= RISCV_K_ZBKC;
+    }
+	if (sigsetjmp(ill_jmp, 1) == 0) {
+        riscv_zbkx_probe(rs1, rs2);
+        OPENSSL_riscvcap_P |= RISCV_K_ZBKX;
     }
     sigaction(SIGILL, &oact_ill, NULL);
     sigprocmask(SIG_SETMASK, &oset, NULL);

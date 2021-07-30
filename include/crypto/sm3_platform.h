@@ -14,8 +14,8 @@
 #include "riscv_arch.h"
 extern unsigned int OPENSSL_riscvcap_P;
 # define RISCV_SM3_CAPABLE         (OPENSSL_riscvcap_P & RISCV_K_ZKSH)
-inline unsigned ARCH_P0(unsigned x) { if (RISCV_SM3_CAPABLE) return _rv_sm3p0(x); else return _P0(x); }
-inline unsigned ARCH_P1(unsigned x) { if (RISCV_SM3_CAPABLE) return _rv_sm3p1(x); else return _P1(x); }
+static inline unsigned ARCH_P0(unsigned x) { if (RISCV_SM3_CAPABLE) return _rv_sm3p0(x); else return _P0(x); }
+static inline unsigned ARCH_P1(unsigned x) { if (RISCV_SM3_CAPABLE) return _rv_sm3p1(x); else return _P1(x); }
 # define ARCH_SM3_CAPABLE RISCV_SM3_CAPABLE
 #endif
 #endif

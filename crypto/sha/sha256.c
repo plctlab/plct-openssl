@@ -166,7 +166,9 @@ static const SHA_LONG K256[64] = {
 # define _Sigma1(x)       (ROTATE((x),26) ^ ROTATE((x),21) ^ ROTATE((x),7))
 # define _sigma0(x)       (ROTATE((x),25) ^ ROTATE((x),14) ^ ((x)>>3))
 # define _sigma1(x)       (ROTATE((x),15) ^ ROTATE((x),13) ^ ((x)>>10))
+#define SHA256_PLATFORM
 #include "crypto/sha_platform.h"
+#undef SHA256_PLATFORM
 #ifdef arch_sha256_CAPABLE
 #define Sigma0(x) arch_sha256_Sigma0(x)
 #define Sigma1(x) arch_sha256_Sigma1(x)

@@ -15,7 +15,14 @@ size_t SHA3_absorb(uint64_t A[5][5], const unsigned char *inp, size_t len,
                    size_t r);
 void SHA3_squeeze(uint64_t A[5][5], unsigned char *out, size_t len, size_t r);
 
-#if !defined(KECCAK1600_ASM) || !defined(SELFTEST)
+#define SHA3_PLATFORM
+#include "crypto/sha_platform.h"
+#undef SHA3_PLATFORM
+#if !defined(arch_keccak1600_CAPABLE)
+#define arch_KeccakF1600  KeccakF1600
+#endif
+
+#if !defined(KECCAK1600_ASM) || !defined(SELFTEST) || defined(arch_keccak1600_ORIGIN)
 
 /*
  * Choose some sensible defaults
@@ -235,7 +242,7 @@ static void Iota(uint64_t A[5][5], size_t i)
     A[0][0] ^= iotas[i];
 }
 
-static void KeccakF1600(uint64_t A[5][5])
+void KeccakF1600(uint64_t A[5][5])
 {
     size_t i;
 
@@ -370,7 +377,7 @@ static void Round(uint64_t A[5][5], size_t i)
     A[4][4] = C[4] ^ (~C[0] & C[1]);
 }
 
-static void KeccakF1600(uint64_t A[5][5])
+void KeccakF1600(uint64_t A[5][5])
 {
     size_t i;
 
@@ -513,7 +520,7 @@ static void Round(uint64_t A[5][5], size_t i)
     A[0][0] ^= iotas[i];
 }
 
-static void KeccakF1600(uint64_t A[5][5])
+void KeccakF1600(uint64_t A[5][5])
 {
     size_t i;
 
@@ -651,7 +658,7 @@ static void Round(uint64_t R[5][5], uint64_t A[5][5], size_t i)
 #endif
 }
 
-static void KeccakF1600(uint64_t A[5][5])
+void KeccakF1600(uint64_t A[5][5])
 {
     uint64_t T[5][5];
     size_t i;
@@ -971,7 +978,7 @@ static void FourRounds(uint64_t A[5][5], size_t i)
     /* C[4] ^= */ A[4][4] = B[4] ^ (~B[0] & B[1]);
 }
 
-static void KeccakF1600(uint64_t A[5][5])
+void KeccakF1600(uint64_t A[5][5])
 {
     size_t i;
 
@@ -1054,6 +1061,7 @@ static uint64_t BitDeinterleave(uint64_t Ai)
     return Ai;
 }
 
+
 /*
  * SHA3_absorb can be called multiple times, but at each invocation
  * largest multiple of |r| out of |len| bytes are processed. Then
@@ -1082,7 +1090,7 @@ size_t SHA3_absorb(uint64_t A[5][5], const unsigned char *inp, size_t len,
 
             A_flat[i] ^= BitInterleave(Ai);
         }
-        KeccakF1600(A);
+        arch_KeccakF1600(A);
         len -= r;
     }
 
@@ -1124,7 +1132,7 @@ void SHA3_squeeze(uint64_t A[5][5], unsigned char *out, size_t len, size_t r)
             len -= 8;
         }
         if (len)
-            KeccakF1600(A);
+            arch_KeccakF1600(A);
     }
 }
 #endif

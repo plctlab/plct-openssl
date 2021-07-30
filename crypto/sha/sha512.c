@@ -505,7 +505,9 @@ static SHA_LONG64 __fastcall __pull64be(const void *x)
 # define _Sigma1(x)       (ROTR((x),14) ^ ROTR((x),18) ^ ROTR((x),41))
 # define _sigma0(x)       (ROTR((x),1)  ^ ROTR((x),8)  ^ ((x)>>7))
 # define _sigma1(x)       (ROTR((x),19) ^ ROTR((x),61) ^ ((x)>>6))
+#define SHA512_PLATFORM
 #include "crypto/sha_platform.h"
+#undef SHA512_PLATFORM
 #ifdef arch_sha512_CAPABLE
 #define Sigma0(x) arch_sha512_Sigma0(x)
 #define Sigma1(x) arch_sha512_Sigma1(x)

@@ -65,6 +65,8 @@ IF[{- !$disabled{asm} -}]
 
   $KECCAK1600ASM_ppc64=keccak1600-ppc64.s
 
+  $KECCAK1600ASM_riscv32 = keccak1600.c keccak1600_riscv.c
+  $KECCAK1600ASM_riscv64 = keccak1600.c keccak1600_riscv.c
   # Now that we have defined all the arch specific variables, use the
   # appropriate one, and define the appropriate macros
   IF[$KECCAK1600ASM_{- $target{asm_arch} -}]
@@ -82,6 +84,9 @@ SOURCE[../../providers/libfips.a]= $COMMON
 DEFINE[../../libcrypto]=$SHA1DEF $KECCAK1600DEF
 DEFINE[../../providers/libfips.a]=$SHA1DEF $KECCAK1600DEF
 DEFINE[../../providers/libimplementations.a]=$SHA1DEF $KECCAK1600DEF
+
+INCLUDE[keccak1600.o]=..
+INCLUDE[keccak1600_riscv.o]=..
 
 GENERATE[sha1-586.s]=asm/sha1-586.pl
 DEPEND[sha1-586.s]=../perlasm/x86asm.pl
